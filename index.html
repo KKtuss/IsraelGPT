@@ -233,7 +233,7 @@
       <div class="chat-scroll" id="chat-scroll"></div>
       <form class="chat-input" autocomplete="off">
         <label for="prompt" class="sr-only">Message IsraelGPT</label>
-        <textarea id="prompt" name="prompt" placeholder="שלחו הודעה ל-IsraelGPT..." aria-label="Message IsraelGPT"></textarea>
+        <textarea id="prompt" name="prompt" placeholder="Send a message to IsraelGPT..." aria-label="Message IsraelGPT"></textarea>
         <button type="submit">Send</button>
       </form>
     </section>
@@ -252,7 +252,8 @@
       const messages = [
         {
           role: "assistant",
-          content: "שלום! אני IsraelGPT, כאן כדי לעזור. איך אוכל לסייע היום?",
+          content:
+            "Hi there! I'm IsraelGPT, here to help with anything related to Israel and Jewish life. How can I assist you today?",
         },
       ];
 
@@ -290,10 +291,14 @@
         setLoadingState(true);
 
         try {
+          const historyForApi = messages.filter(
+            (message, index) => !(index === 0 && message.role === "assistant")
+          );
+
           const response = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages }),
+            body: JSON.stringify({ messages: historyForApi }),
           });
 
           if (!response.ok) {
@@ -315,7 +320,7 @@
           messages.push({
             role: "assistant",
             content:
-              "מצטערת, משהו השתבש בזמן העיבוד. נסו שוב בעוד רגע או בדקו את ההגדרות.",
+              "Sorry, something went wrong while processing your request. Please try again in a moment or check your settings.",
           });
           renderMessages();
         } finally {

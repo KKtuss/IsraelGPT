@@ -5,7 +5,7 @@ const SYSTEM_PROMPT = [
 ].join(" ");
 
 const MISTRAL_CHAT_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
-const DEFAULT_MODEL = "mistral-large-latest";
+const DEFAULT_MODEL = "mistral-small-latest";
 
 function parseRequestBody(req) {
   if (!req.body) {
@@ -111,7 +111,7 @@ module.exports = async function handler(req, res) {
     const statusCode = isRateLimited ? 429 : 502;
 
     res.status(statusCode).json({
-      error: "IsraelGPT אינו יכול להשיב כרגע. אנא נסו שוב מאוחר יותר.",
+      error: "IsraelGPT cannot respond right now. Please try again later.",
       details: process.env.NODE_ENV === "production" ? undefined : error.message,
     });
   }
