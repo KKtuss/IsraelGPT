@@ -230,17 +230,7 @@
 
   <main class="chat-wrapper">
     <section class="chat-panel" aria-live="polite">
-      <div class="chat-scroll">
-        <div class="message assistant">
-          שלום! אני IsraelGPT, כאן כדי לעזור. איך אוכל לסייע היום?
-        </div>
-        <div class="message user">
-          ספר לי משהו מעניין על מדע ישראלי.
-        </div>
-        <div class="message assistant">
-          ישראל מובילה בפיתוח טכנולוגיות מים, כולל התפלה מתקדמת ומיחזור כמעט מלא של מי קולחין לחקלאות.
-        </div>
-      </div>
+      <div class="chat-scroll" id="chat-scroll"></div>
       <form class="chat-input" autocomplete="off">
         <label for="prompt" class="sr-only">Message IsraelGPT</label>
         <textarea id="prompt" name="prompt" placeholder="שלחו הודעה ל-IsraelGPT..." aria-label="Message IsraelGPT"></textarea>
@@ -252,6 +242,113 @@
   <footer>
     Crafted for a Jewish future &nbsp;•&nbsp; IsraelGPT Prototype Interface
   </footer>
+  <script>
+    (function () {
+      const form = document.querySelector(".chat-input");
+      const textarea = form.querySelector("textarea");
+      const submitButton = form.querySelector("button");
+      const chatScroll = document.getElementById("chat-scroll");
+
+      const messages = [
+        {
+          role: "assistant",
+          content: "שלום! אני IsraelGPT, כאן כדי לעזור. איך אוכל לסייע היום?",
+        },
+      ];
+
+      function createMessageElement(message) {
+        const el = document.createElement("div");
+        el.className = `message ${message.role}`;
+        el.textContent = message.content;
+        return el;
+      }
+
+      function renderMessages() {
+        chatScroll.innerHTML = "";
+        messages.forEach((msg) => {
+          chatScroll.appendChild(createMessageElement(msg));
+        });
+        chatScroll.scrollTop = chatScroll.scrollHeight;
+      }
+
+      function setLoadingState(isLoading) {
+        submitButton.disabled = isLoading;
+        submitButton.textContent = isLoading ? "Thinking…" : "Send";
+        textarea.readOnly = isLoading;
+        if (isLoading) {
+          textarea.dataset.previousPlaceholder = textarea.placeholder;
+          textarea.placeholder = "IsraelGPT is formulating a response...";
+        } else if (textarea.dataset.previousPlaceholder) {
+          textarea.placeholder = textarea.dataset.previousPlaceholder;
+          delete textarea.dataset.previousPlaceholder;
+        }
+      }
+
+      async function sendMessage(userMessage) {
+        messages.push({ role: "user", content: userMessage });
+        renderMessages();
+        setLoadingState(true);
+
+        try {
+          const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (!data || !data.message || !data.message.content) {
+            throw new Error("Unexpected response from IsraelGPT");
+          }
+
+          messages.push({
+            role: "assistant",
+            content: data.message.content.trim(),
+          });
+          renderMessages();
+        } catch (error) {
+          console.error(error);
+          messages.push({
+            role: "assistant",
+            content:
+              "מצטערת, משהו השתבש בזמן העיבוד. נסו שוב בעוד רגע או בדקו את ההגדרות.",
+          });
+          renderMessages();
+        } finally {
+          setLoadingState(false);
+          textarea.focus();
+        }
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const value = textarea.value.trim();
+        if (!value) {
+          return;
+        }
+        textarea.value = "";
+        sendMessage(value);
+      });
+
+      textarea.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          form.requestSubmit();
+        }
+      });
+
+      textarea.addEventListener("input", () => {
+        textarea.style.height = "auto";
+        textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+      });
+
+      renderMessages();
+    })();
+  </script>
 </body>
 </html>
 
